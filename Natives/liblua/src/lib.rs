@@ -2,6 +2,9 @@ use mlua::prelude::*;
 use std::ffi::c_void;
 use std::ffi::{c_char, CStr, CString};
 
+#[cfg(test)]
+mod tests;
+
 #[no_mangle]
 pub extern "C" fn init_lua(debug: extern "C" fn(*mut c_char)) -> *mut c_void {
     let lua = Box::new(Lua::new());
