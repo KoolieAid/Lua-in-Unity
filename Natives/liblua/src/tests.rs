@@ -13,6 +13,10 @@ fn initialization() {
 extern "C" fn listener(ch: *mut c_char) {
     let str = unsafe { CStr::from_ptr(ch) };
     println!("Output: {str:?}");
+
+    unsafe {
+        free_string(str.as_ptr().cast_mut());
+    }
 }
 
 extern "C" fn empty() {}
