@@ -27,18 +27,28 @@ pub extern "C" fn destroy_lua(lua: *mut c_void) {
     unsafe { Box::<Lua>::from_raw(lua.cast()) };
 }
 
+extern "C" fn empty_func() {}
+
 #[no_mangle]
 pub extern "C" fn register_function(
     lua: *mut c_void,
-    name: *const i8,
-
+    name: *const c_char,
     func: Option<extern "C" fn()>,
 ) {
-    let lua = unsafe { Box::<Lua>::from_raw(lua.cast::<Lua>()) };
+    let lua = unsafe { Box::<Lua>::from_raw(lua.cast()) };
 
     let name = unsafe { CStr::from_ptr(name) };
 
-    match register_func(&lua, name.to_str().unwrap(), func.unwrap()) {
+    match register_func(
+        &lua,
+        name.to_str().unwrap(),
+        func.unwrap_or_else(|| {
+            let er_func: LuaFunction = lua.globals().get("debuglog").unwrap();
+
+            let _ = er_func.call::<_, ()>("No function provided. Using empty body instead.");
+            empty_func
+        }),
+    ) {
         Ok(_) => {}
         Err(e) => println!("Error: {e:?}"),
     }
@@ -58,22 +68,19 @@ fn register_func(lua: &Lua, name: &str, f: extern "C" fn()) -> LuaResult<()> {
 }
 
 #[no_mangle]
-fn execute(lua: *mut c_void, chunk: *const i8) {
+fn execute(lua: *mut c_void, chunk: *const c_char) {
     let chunk = unsafe { CStr::from_ptr(chunk) };
 
     let lua = unsafe { Box::from_raw(lua.cast::<Lua>()) };
 
     if let Err(e) = lua.load(chunk.to_str().unwrap_or_default()).exec() {
-        match e {
-            LuaError::RuntimeError(s) => {
-                let func: LuaFunction = lua.globals().get("debuglog").unwrap();
-                func.call::<_, ()>(s).unwrap();
-            }
-            err => {
-                let func: LuaFunction = lua.globals().get("debuglog").unwrap();
-                func.call::<_, ()>(err.to_string()).unwrap();
-            }
-        }
+        let arg = match e {
+            LuaError::RuntimeError(s) => s,
+            err => err.to_string(),
+        };
+
+        let func: LuaFunction = lua.globals().get("debuglog").unwrap();
+        func.call::<_, ()>(arg).unwrap();
     }
 
     Box::into_raw(lua);

@@ -25,11 +25,9 @@ extern "C" fn empty() {}
 fn registering_function() {
     let lua = init_lua(listener);
 
-    let owned = CString::new("test").unwrap();
+    let function_name = CString::new("test").unwrap();
 
-    let string = owned.as_c_str();
-
-    register_function(lua, string.as_ptr(), Some(empty));
+    register_function(lua, function_name.as_ptr(), Some(empty));
 
     destroy_lua(lua);
 }
@@ -38,45 +36,38 @@ fn registering_function() {
 fn calling_function() {
     let lua = init_lua(listener);
 
-    let owned = CString::new("test").unwrap();
+    let func_name = CString::new("test").unwrap();
 
-    let string = owned.as_c_str();
+    register_function(lua, func_name.as_ptr(), Some(empty));
 
-    register_function(lua, string.as_ptr(), Some(empty));
-
-    let raw = CString::new(
+    let code = CString::new(
         r#"
         test("test")
         "#,
     )
     .unwrap();
 
-    let cstr = raw.as_c_str();
-
-    execute(lua, cstr.as_ptr());
+    execute(lua, code.as_ptr());
 
     destroy_lua(lua);
 }
+
 #[test]
 fn calling_function_error() {
     let lua = init_lua(listener);
 
-    let owned = CString::new("test").unwrap();
+    let func_name = CString::new("test").unwrap();
 
-    let string = owned.as_c_str();
+    register_function(lua, func_name.as_ptr(), Some(empty));
 
-    register_function(lua, string.as_ptr(), Some(empty));
-
-    let raw = CString::new(
+    let code = CString::new(
         r#"
         non_existent("test")
         "#,
     )
     .unwrap();
 
-    let cstr = raw.as_c_str();
-
-    execute(lua, cstr.as_ptr());
+    execute(lua, code.as_ptr());
 
     destroy_lua(lua);
 }
