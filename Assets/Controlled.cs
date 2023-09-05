@@ -17,6 +17,7 @@ public class Controlled : MonoBehaviour
         }
         
         Debug.Log("thing");
+        Debug.Log("Finished");
     }
 
     private void OnDestroy()
