@@ -15,6 +15,8 @@ public class Controlled : MonoBehaviour
         {
             lua = Lua.InitLua(Lua.DebugWrapper);
         }
+        
+        Debug.Log();
     }
 
     private void OnDestroy()
